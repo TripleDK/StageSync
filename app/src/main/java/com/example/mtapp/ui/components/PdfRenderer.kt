@@ -1,6 +1,5 @@
 package com.example.mtapp.ui.components
 
-import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.pdf.PdfRenderer
 import android.os.ParcelFileDescriptor
@@ -9,21 +8,14 @@ import android.widget.ImageView
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.awaitFirstDown
-import androidx.compose.foundation.gestures.detectDragGestures
-import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.gestures.forEachGesture
 import androidx.compose.foundation.gestures.rememberTransformableState
-import androidx.compose.foundation.gestures.transformable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxHeight
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.pager.HorizontalPager
-import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -39,26 +31,23 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.input.pointer.consumeAllChanges
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
-import androidx.test.core.app.ActivityScenario.launch
-import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import java.io.File
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.roundToInt
-import kotlin.math.sign
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun PdfViewer(
     pdfFilePath: String,
+    onTurnFirstPage: () -> Unit,
+    onTurnLastPage: () -> Unit,
     initialPage: Int = 0,
     lastPage: Int = 0,
+
     modifier: Modifier = Modifier
 ) {
     val pdfRendererHelper = remember {
@@ -69,16 +58,14 @@ fun PdfViewer(
     val state = rememberLazyListState()
     val coroutineScope = rememberCoroutineScope()
 
-    val surroundingPages = 5
     var sharedDragOffset by remember { mutableFloatStateOf(0f) }
 
     LaunchedEffect(initialPage) {
         // Ensure that we scroll such that the currentPage is centered
         coroutineScope.launch {
-            state.scrollToItem(initialPage)
+            state.scrollToItem(0)
         }
     }
-
 
     Box() {
         LazyRow(
@@ -86,11 +73,8 @@ fun PdfViewer(
             userScrollEnabled = false,
             modifier = Modifier.fillMaxHeight()
         ) {
-            val start = max(currentPage - surroundingPages, 0)
-            val end = min(currentPage + surroundingPages, pageCount - 1)
-            Log.v("MainActivity", "building items: ${(start..end).toList()}")
 
-            itemsIndexed((start..end).toList()) { _, pageIndex ->
+            itemsIndexed((initialPage..lastPage).toList()) { _, pageIndex ->
                 PdfPageView(
                     pdfFilePath = pdfFilePath,
                     pageIndex = pageIndex,
@@ -99,12 +83,17 @@ fun PdfViewer(
                     sharedDragOffset = sharedDragOffset,
                     onSwipeLeft = {
                         currentPage--
+                        if (currentPage < initialPage) {
+                            currentPage = initialPage
+                            onTurnFirstPage()
+                            return@PdfPageView
+                        }
                         coroutineScope.launch {
                             Log.v(
                                 "MyMainActivity",
                                 "Swipe left to $currentPage, first visible item: ${state.firstVisibleItemIndex}"
                             )
-                            state.animateScrollToItem(currentPage - start)
+                            state.animateScrollToItem(currentPage - initialPage)
                             Log.v(
                                 "MyMainActivity",
                                 "New page $currentPage, first visible item: ${state.firstVisibleItemIndex}"
@@ -113,12 +102,17 @@ fun PdfViewer(
                     },
                     onSwipeRight = {
                         currentPage++
+                        if (currentPage > lastPage) {
+                            currentPage = lastPage
+                            onTurnLastPage()
+                            return@PdfPageView
+                        }
                         coroutineScope.launch {
                             Log.v(
                                 "MyMainActivity",
                                 "Swipe right to $currentPage, first visible item: ${state.firstVisibleItemIndex} "
                             )
-                            state.animateScrollToItem(currentPage - start)
+                            state.animateScrollToItem(currentPage - initialPage)
                             Log.v(
                                 "MyMainActivity",
                                 "New page $currentPage, first visible item: ${state.firstVisibleItemIndex}"

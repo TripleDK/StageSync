@@ -20,7 +20,8 @@ object DataSource {
             val footlooseScene1 = Scene(
                 name = R.string.footloose_scene1,
                 type = SceneType.Song,
-                startPage = 15
+                startPage = 15,
+                endPage = 16
             )
             footlooseScenes = listOf(footlooseScene1)
         }
@@ -29,7 +30,8 @@ object DataSource {
             Scene(
                 name = R.string.wiz_oz_scene1,
                 type = SceneType.Scene,
-                startPage = 3
+                startPage = 3,
+                endPage = 3
             ).apply {
                 scriptPath = copyFileFromAssetsToInternalStorage(
                     context,
@@ -41,7 +43,8 @@ object DataSource {
             Scene(
                 name = R.string.wiz_oz_scene2,
                 type = SceneType.Song,
-                startPage = 3
+                startPage = 3,
+                endPage = 4
             ).apply {
                 scriptPath = copyFileFromAssetsToInternalStorage(
                     context,
@@ -53,7 +56,8 @@ object DataSource {
             Scene(
                 name = R.string.wiz_oz_scene3,
                 type = SceneType.Scene,
-                startPage = 4
+                startPage = 4,
+                endPage = 6
             ).apply {
                 scriptPath = copyFileFromAssetsToInternalStorage(
                     context,
@@ -65,7 +69,8 @@ object DataSource {
             Scene(
                 name = R.string.wiz_oz_scene4,
                 type = SceneType.Song,
-                startPage = 6
+                startPage = 6,
+                endPage = 7
             ).apply {
                 scriptPath = copyFileFromAssetsToInternalStorage(
                     context,

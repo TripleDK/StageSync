@@ -1,5 +1,6 @@
-package com.example.mtapp.ui;
+package com.example.mtapp.ui
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.ViewModelProvider.AndroidViewModelFactory.Companion.APPLICATION_KEY
@@ -8,6 +9,7 @@ import androidx.lifecycle.viewmodel.viewModelFactory
 import com.example.mtapp.Models.Scene
 import com.example.mtapp.Models.Show
 import com.example.mtapp.StageSyncApplication
+import com.example.mtapp.data.RehearsalOptions
 import com.example.mtapp.data.StageSyncRepository
 import com.example.mtapp.data.StageSyncUiState
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -37,6 +39,48 @@ class StageSyncViewModel(private val stageSyncRepository: StageSyncRepository) :
             currentState.copy(
                 currentShow = _uiState.value.currentShow,
                 currentScene = scene
+            )
+        }
+    }
+
+    fun setNextScene() {
+        val currentShow = _uiState.value.currentShow
+        val currentScene = _uiState.value.currentScene
+        val currentSceneIndex = currentShow?.scenes?.indexOf(currentScene) ?: return
+
+        if (currentSceneIndex < currentShow.scenes.size?.minus(1) ?: return) {
+            _uiState.update { currentState ->
+                currentState.copy(
+                    currentShow = currentShow,
+                    currentScene = currentShow.scenes[currentSceneIndex + 1]
+                )
+            }
+        } else {
+            Log.v("MainActivity", "Already at last scene!")
+        }
+    }
+
+    fun setPrevScene() {
+        val currentShow = _uiState.value.currentShow
+        val currentScene = _uiState.value.currentScene
+        val currentSceneIndex = currentShow?.scenes?.indexOf(currentScene) ?: return
+
+        if (currentSceneIndex > 0) {
+            _uiState.update { currentState ->
+                currentState.copy(
+                    currentShow = currentShow,
+                    currentScene = currentShow.scenes[currentSceneIndex - 1]
+                )
+            }
+        } else {
+            Log.v("MainActivity", "Already at first scene!")
+        }
+    }
+
+    fun toggleRehearsalOptions(options: RehearsalOptions) {
+        _uiState.update { currentState ->
+            currentState.copy(
+                currentHeader = options
             )
         }
     }

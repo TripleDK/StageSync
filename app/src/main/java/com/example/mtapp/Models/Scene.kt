@@ -12,5 +12,7 @@ data class Scene(
     var scriptPath: String? = null,
     var scorePath: String? = null,
     var startPage: Int,
+    var endPage: Int,
     var scoreStartPage: Int? = null,
+    var scoreEndPage: Int? = null
 ) : Parcelable
