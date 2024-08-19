@@ -442,5 +442,16 @@
     <string name="wiz_oz_scene3">"Act One Scene One - B"</string>
     <string name="wiz_oz_scene4">"When your feet Don't touch the ground"</string>
 
+    <string name="addams_fam_scene1">"OVERTURE/PROLOGUE"</string>
+    <string name="addams_fam_scene2">"WHEN YOU'RE AN ADDAMS"</string>
+    <string name="addams_fam_scene3">"(WE HAVE) A PROBLEM"</string>
+    <string name="addams_fam_scene4">"FESTER'S MANIFESTO"</string>
+    <string name="addams_fam_scene5">"SCENE 2"</string>
+    <string name="addams_fam_scene6">"TRAPPED"</string>
+
+
+    <string name="backing_track">"Backing track"</string>
+    <string name="reference_track">"Reference track"</string>
+    <string name="note_bash_all_track">"All note bash"</string>
 
 </resources>

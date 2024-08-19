@@ -6,5 +6,5 @@ import com.example.mtapp.Models.Show
 data class StageSyncUiState(
     val currentShow: Show? = null,
     val currentScene: Scene? = null,
-    val currentHeader: RehearsalOptions = RehearsalOptions.Scene
+    val currentHeader: RehearsalOptions = RehearsalOptions.Script
 )

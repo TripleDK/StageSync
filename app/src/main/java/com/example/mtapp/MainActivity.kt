@@ -5,7 +5,16 @@ import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.calculateEndPadding
+import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.windowsizeclass.ExperimentalMaterial3WindowSizeClassApi
@@ -22,7 +31,6 @@ private const val TAG = "MyMainActivity"
 class MainActivity : ComponentActivity() {
     @OptIn(ExperimentalMaterial3WindowSizeClassApi::class)
     override fun onCreate(savedInstanceState: Bundle?) {
-        enableEdgeToEdge()
         super.onCreate(savedInstanceState)
 
         Log.d(TAG, "onCreate Called")
@@ -31,13 +39,9 @@ class MainActivity : ComponentActivity() {
                 val layoutDirection = LocalLayoutDirection.current
                 Surface(
                     modifier = Modifier
-//                        .padding(
-//                            start = WindowInsets.safeDrawing.asPaddingValues()
-//                                .calculateStartPadding(layoutDirection),
-//                            end = WindowInsets.safeDrawing.asPaddingValues()
-//                                .calculateEndPadding(layoutDirection)
-
-                        //  )
+                        .statusBarsPadding()
+                        .navigationBarsPadding()
+                        .imePadding()
                         .fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {

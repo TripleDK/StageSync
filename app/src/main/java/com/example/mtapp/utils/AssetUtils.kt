@@ -7,11 +7,13 @@ import java.io.InputStream
 
 fun copyFileFromAssetsToInternalStorage(
     context: Context,
-    assetFileName: String,
-    outputFileName: String
+    assetFilePath: String,
+    outputFilePath: String
 ): String {
-    val file = File(context.filesDir, outputFileName)
-    context.assets.open(assetFileName).use { inputStream ->
+    val file = File(context.filesDir, outputFilePath)
+    file.parentFile?.mkdirs()
+
+    context.assets.open(assetFilePath).use { inputStream ->
         FileOutputStream(file).use { outputStream ->
             copyFile(inputStream, outputStream)
         }
