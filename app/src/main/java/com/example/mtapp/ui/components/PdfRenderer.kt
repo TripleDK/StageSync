@@ -236,8 +236,8 @@ fun PdfPageView(
                                 onSwipeLeft()
                             else if (offset.x < -swipeThreshold)
                                 onSwipeRight()
+                            offset = Offset.Zero
                         }
-                        offset = Offset.Zero
                         upCounter++
                         Log.v("MyMainActivity", "Up!")
                     }

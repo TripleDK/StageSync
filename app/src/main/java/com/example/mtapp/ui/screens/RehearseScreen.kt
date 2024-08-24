@@ -2,35 +2,43 @@ package com.example.mtapp.ui.screens
 
 import android.media.MediaPlayer
 import android.net.Uri
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.absoluteOffset
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.Flag
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.SkipNext
+import androidx.compose.material.icons.filled.SkipPrevious
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextField
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -42,15 +50,19 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.unit.toSize
 import com.example.mtapp.Models.AudioObject
 import com.example.mtapp.Models.Scene
 import com.example.mtapp.Models.Song
@@ -58,6 +70,7 @@ import com.example.mtapp.R
 import com.example.mtapp.data.RehearsalOptions
 import com.example.mtapp.ui.StageSyncViewModel
 import com.example.mtapp.ui.components.PdfViewer
+import com.example.mtapp.utils.formatTime
 import kotlinx.coroutines.delay
 import kotlin.math.roundToInt
 
@@ -83,6 +96,8 @@ fun RehearseScreen(
 
             AudioPlayer(
                 uiState.currentScene!!,
+                onNextScene = { viewModel.setNextScene() },
+                onPrevScene = { viewModel.setPrevScene() },
                 modifier = Modifier
                     .weight(0.2f)
                     .fillMaxWidth()
@@ -108,14 +123,14 @@ fun NavHeadersAndSceneView(
             scene,
             toggledHeader,
             onToggleRehearsalOptions = onToggleRehearsalOptions,
-            modifier = Modifier.weight(0.2f)
+            modifier = Modifier.weight(0.1f)
         )
         SceneView(
             scene,
             toggledHeader,
             onNextScene = onNextScene,
             onPrevScene = onPrevScene,
-            modifier = Modifier.weight(0.8f)
+            modifier = Modifier.weight(0.9f)
         )
     }
 }
@@ -214,21 +229,22 @@ fun SceneView(
     ) {
         Box(
             modifier = Modifier
-                .weight(if (toggledHeader == RehearsalOptions.Scene) 1f else 0.001f)
-        ) {
-
-        }
-        Box(
-            modifier = Modifier
                 .weight(if (toggledHeader == RehearsalOptions.Script) 1f else 0.001f)
         ) {
-            Text(text = "Script here!")
             if (scene.scriptPath != null) {
                 PdfViewer(
                     pdfFilePath = scene.scriptPath!!,
                     initialPage = scene.startPage!! - 1,
                     lastPage = scene.endPage - 1,
-                    onTurnLastPage = onNextScene,
+                    onTurnLastPage = {
+                        var oldScene = scene
+                        onNextScene()
+                        var newScene = scene
+                        if (oldScene.scriptPath == newScene.scriptPath) {
+
+                        }
+
+                    },
                     onTurnFirstPage = onPrevScene,
                     modifier = Modifier.fillMaxSize()
                 )
@@ -244,7 +260,7 @@ fun SceneView(
             modifier = Modifier
                 .weight(if (toggledHeader == RehearsalOptions.Score) 1f else 0.001f)
         ) {
-            if (scene.scorePath != null) {
+            if (scene is Song) {
                 PdfViewer(
                     pdfFilePath = scene.scorePath!!,
                     initialPage = scene.scoreStartPage!! - 1,
@@ -261,24 +277,35 @@ fun SceneView(
                 )
             }
         }
+        Box(
+            modifier = Modifier
+                .weight(if (toggledHeader == RehearsalOptions.Scene) 1f else 0.001f)
+        ) {
+
+        }
     }
 }
 
 @Composable
-fun AudioPlayer(scene: Scene, modifier: Modifier = Modifier) {
-    if (scene !is Song) {
-        //Not yet implemented!
-        return
-    }
+fun AudioPlayer(
+    scene: Scene,
+    onNextScene: () -> Unit,
+    onPrevScene: () -> Unit,
+    modifier: Modifier = Modifier
+) {
     var isPlaying by remember { mutableStateOf(false) }
     val context = LocalContext.current
-    var audioPath by remember { mutableStateOf(scene.masterAudio?.audioPath) }
+
+    var audioPath by remember { mutableStateOf(if (scene is Song) scene.masterAudio?.audioPath else "") }
     val mediaPlayer = remember {
         if (audioPath?.isNotEmpty() == true) {
             MediaPlayer().apply {
                 try {
                     setDataSource(context, Uri.parse(audioPath)) // Use URI for file path
                     prepare() // Prepare the media player
+                    setOnCompletionListener {
+                        isPlaying = false
+                    }
                 } catch (e: Exception) {
                     e.printStackTrace() // Handle or log the exception
                 }
@@ -293,86 +320,116 @@ fun AudioPlayer(scene: Scene, modifier: Modifier = Modifier) {
         }
     }
 
-    Box(
-        modifier = modifier
-            .fillMaxSize()
+
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        // modifier = Modifier.fillMaxSize()
     ) {
-
-        MediaPlayerTimeLine(
-            mediaPlayer,
-//            modifier = Modifier
-//                .background(Color.Red)
-        )
-
+        MediaPlayerTimeLine(mediaPlayer)
         Text(
             text = stringResource(scene.name),
-            modifier = Modifier
-                .align(Alignment.TopCenter)
         )
 
-
-        scene.tracks?.let {
-            audioPath?.let { it1 ->
-                DropdownMenu(
-                    optionsDisplayNames = it.map { tr -> stringResource(tr.name) }
-                            + stringResource(scene.masterAudio!!.name),
-                    optionsValues = it.map { tr -> tr.audioPath } + scene.masterAudio?.audioPath,
-                    selectedOption = it1,
-                    onOptionSelected = { option ->
-                        audioPath = option
-                        if (mediaPlayer != null) {
-                            val currentAudioPostion = mediaPlayer.currentPosition
-                            mediaPlayer.reset()
-                            mediaPlayer.setDataSource(context, Uri.parse(audioPath))
-                            mediaPlayer.prepare()
-                            mediaPlayer.seekTo(currentAudioPostion)
-
-                            if (isPlaying)
-                                mediaPlayer.start()
-                        }
-                    },
-                    modifier = Modifier
-                        .align(Alignment.CenterStart)
-                )
-            }
-        }
-
-        Row(
-            modifier = Modifier.align(Alignment.Center)
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
         ) {
-            IconButton(onClick = {
-                if (isPlaying)
-                    mediaPlayer?.pause()
-                else
-                    mediaPlayer?.start()
-                isPlaying = !isPlaying
-            }) {
-                Icon(
+            if (scene is Song && scene.tracks != null) {
+                audioPath?.let { it1 ->
+                    DropdownMenu(
+                        optionsDisplayNames = scene.tracks!!.map { tr -> stringResource(tr.name) }
+                                + stringResource(scene.masterAudio!!.name),
+                        optionsValues = scene.tracks!!.map { tr -> tr.audioPath } + scene.masterAudio?.audioPath,
+                        selectedOption = it1,
+                        onOptionSelected = { option ->
+                            audioPath = option
+                            if (mediaPlayer != null) {
+                                val currentAudioPostion = mediaPlayer.currentPosition
+                                mediaPlayer.reset()
+                                mediaPlayer.setDataSource(context, Uri.parse(audioPath))
+                                mediaPlayer.prepare()
+                                mediaPlayer.seekTo(currentAudioPostion)
+
+                                if (isPlaying)
+                                    mediaPlayer.start()
+                            }
+                        },
+                        modifier = Modifier.align(Alignment.CenterStart)
+                    )
+                }
+            } else {
+                //Show characters with lines
+                DropdownMenu(
+                    optionsDisplayNames = listOf(), optionsValues = listOf(), selectedOption = "",
+                    onOptionSelected = {},
+                    modifier = Modifier.align(Alignment.CenterStart)
+                )
+            }
+
+            Row(
+                modifier = Modifier
+                    .align(Alignment.Center)
+                    .wrapContentWidth(),
+                horizontalArrangement = Arrangement.spacedBy(0.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                IconButton(
+                    onClick = { onPrevScene() }
+                ) {
+                    Icon(
+                        Icons.Filled.SkipPrevious,
+                        contentDescription = "Prev",
+                        modifier = Modifier.padding(0.dp)
+                    )
+                }
+                IconButton(onClick = {
                     if (isPlaying)
-                        Icons.Filled.Pause
+                        mediaPlayer?.pause()
                     else
-                        Icons.Filled.PlayArrow,
-                    contentDescription = if (isPlaying) "Pause" else "Play"
+                        mediaPlayer?.start()
+                    isPlaying = !isPlaying
+                }) {
+                    Icon(
+                        if (isPlaying)
+                            Icons.Filled.Pause
+                        else
+                            Icons.Filled.PlayArrow,
+                        contentDescription = if (isPlaying) "Pause" else "Play"
+                    )
+                }
+                IconButton(
+                    onClick = { onNextScene() }
+                ) {
+                    Icon(
+                        Icons.Filled.SkipNext,
+                        contentDescription = "Next"
+                    )
+                }
+            }
+
+            // Composable aligned to the right
+            IconButton(
+                onClick = {},
+                modifier = Modifier
+                    .align(Alignment.CenterEnd)
+            ) {
+                Icon(
+                    Icons.Filled.Flag,
+                    contentDescription = "Right Aligned Icon",
                 )
             }
         }
-        // Composable aligned to the right
-        Icon(
-            painter = painterResource(R.drawable.ic_launcher_foreground),
-            contentDescription = "Right Aligned Icon",
-            modifier = Modifier
-                .align(Alignment.CenterEnd)
-                .padding(end = 16.dp) // Optional padding
-        )
     }
 }
 
 @Composable
 fun MediaPlayerTimeLine(mediaPlayer: MediaPlayer?) {
     val circleSize = 24.dp
-    // val offset = animateOffset(mediaPlayer!!.currentPosition / mediaPlayer.duration, 0f)
+    val circleSizePx = with(LocalDensity.current) { circleSize.toPx() }
+    var timeLineSize by remember { mutableStateOf(Size.Zero) }
 
     var duration by remember { mutableStateOf(1f) }
+    var currentPosition by remember { mutableStateOf(0f) }
     var circleX by remember { mutableStateOf(0f) }
 
     LaunchedEffect(mediaPlayer) {
@@ -381,22 +438,23 @@ fun MediaPlayerTimeLine(mediaPlayer: MediaPlayer?) {
     }
 
     LaunchedEffect(Unit) {
-        while (true) {
-            mediaPlayer?.let {
-                val currentPosition = it.currentPosition.toFloat()
-                circleX = (currentPosition / duration) * 300
-                println("Current Position: $currentPosition, Circle X: $circleX") // Debug log
+        while (mediaPlayer != null) {
+            currentPosition = mediaPlayer.currentPosition.toFloat()
+            circleX = (currentPosition / duration) * timeLineSize.width - circleSizePx / 2
+            println("Current Position: $currentPosition, Circle X: $circleX")
 
-                delay(100)
-            }
+            delay(100)
         }
     }
 
-    Spacer(modifier = Modifier.height(5.dp))
+    //Spacer(modifier = Modifier.height(5.dp))
     Box(
         modifier = Modifier
             .background(Color.Red)
             .fillMaxWidth()
+            .onGloballyPositioned { layoutCoordinates ->
+                timeLineSize = layoutCoordinates.size.toSize()
+            }
     ) {
         Box(
             modifier = Modifier
@@ -406,21 +464,18 @@ fun MediaPlayerTimeLine(mediaPlayer: MediaPlayer?) {
                 .background(Color.Green)
                 .pointerInput(Unit) {
                     detectDragGestures { _, dragAmount ->
-                        circleX += dragAmount.x
-                        mediaPlayer?.seekTo((mediaPlayer.currentPosition + dragAmount.x).toInt())
+                        currentPosition += duration * dragAmount.x / timeLineSize.width
+                        mediaPlayer?.seekTo(currentPosition.toInt())
                     }
                 }
         )
+        Text(
+            text = formatTime(currentPosition) + "/" + formatTime(duration),
+            modifier = Modifier
+                .align(Alignment.TopCenter)
+        )
     }
-}
 
-
-fun animateOffset(
-    animationProgress: Int,
-    circleSizePx: Float
-): IntOffset {
-    val xOffSet = (animationProgress)
-    return IntOffset(xOffSet.toInt(), 0)
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -443,18 +498,49 @@ fun DropdownMenu(
         onExpandedChange = { expanded = !expanded },
         modifier = modifier
     ) {
-        TextField(
-            value = selectedOptionDisplayName,
-            readOnly = true,
-            onValueChange = {},
-            singleLine = true,
-            trailingIcon = {
-                Icon(Icons.Filled.ArrowDropDown, contentDescription = "Dropdown")
-            },
+        Box(
             modifier = Modifier
                 .widthIn(min = 100.dp, max = 150.dp)
+                .background(MaterialTheme.colorScheme.surface)
+                .border(BorderStroke(1.dp, MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f)))
+                .padding(start = 2.dp, end = 0.dp) // Padding for the text field
+                .clip(RoundedCornerShape(4.dp))
                 .menuAnchor()
-        )
+        ) {
+            Row(
+                modifier = Modifier
+                    //  .fillMaxWidth()
+                    .background(Color.Yellow)
+                    .padding(2.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                BasicTextField(
+                    value = selectedOptionDisplayName,
+                    onValueChange = {},
+                    enabled = false,
+                    singleLine = true,
+                    interactionSource = remember { MutableInteractionSource() },
+                    modifier = Modifier
+                        // .weight(1f) // Take up remaining space
+                        .padding(0.dp) // Padding inside the text field
+                ) { innerTextField ->
+                    TextFieldDefaults.DecorationBox(
+                        value = selectedOptionDisplayName,
+                        visualTransformation = VisualTransformation.None,
+                        innerTextField = innerTextField,
+                        singleLine = true,
+                        enabled = false,
+                        interactionSource = remember { MutableInteractionSource() },
+                        contentPadding = PaddingValues(2.dp),
+
+                        )
+                }
+                Icon(
+                    imageVector = Icons.Filled.ArrowDropDown,
+                    contentDescription = "Dropdown",
+                )
+            }
+        }
         ExposedDropdownMenu(
             expanded = expanded,
             onDismissRequest = { /*TODO*/ }
@@ -467,7 +553,6 @@ fun DropdownMenu(
                     },
                     text = { Text(optionDisplayName!!) })
             }
-
         }
     }
 }
@@ -497,7 +582,9 @@ fun AudioPlayerPreview() {
             startPage = 3,
             endPage = 3,
             masterAudio = AudioObject(R.string.backing_track, "")
-        )
+        ),
+        onNextScene = {},
+        onPrevScene = {}
     )
 }
 
