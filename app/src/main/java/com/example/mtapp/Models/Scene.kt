@@ -2,7 +2,9 @@ package com.example.mtapp.Models
 
 import android.os.Parcelable
 import androidx.annotation.StringRes
+import com.example.mtapp.data.SceneState
 import kotlinx.parcelize.Parcelize
+import kotlinx.parcelize.RawValue
 
 @Parcelize
 open class Scene(
@@ -11,8 +13,7 @@ open class Scene(
     open var scorePath: String? = null,
     open var startPage: Int,
     open var endPage: Int,
-    open var scoreStartPage: Int? = null,
-    open var scoreEndPage: Int? = null
+    open var sceneState: @RawValue SceneState = SceneState() //TODO: Have a state per scene, so it remembers where you left off on each scene
 ) : Parcelable
 
 
@@ -23,8 +24,8 @@ data class Song(
     override var scorePath: String? = null,
     override var startPage: Int,
     override var endPage: Int,
-    override var scoreStartPage: Int? = null,
-    override var scoreEndPage: Int? = null,
+    var scoreStartPage: Int? = null,
+    var scoreEndPage: Int? = null,
     var masterAudio: AudioObject? = null,
     var tracks: List<AudioObject>? = null
 ) : Scene(
@@ -32,9 +33,7 @@ data class Song(
     scriptPath = scriptPath,
     scorePath = scorePath,
     startPage = startPage,
-    endPage = endPage,
-    scoreStartPage = scoreStartPage,
-    scoreEndPage = scoreEndPage
+    endPage = endPage
 )
 
 @Parcelize

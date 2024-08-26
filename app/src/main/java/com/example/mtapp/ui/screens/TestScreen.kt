@@ -14,17 +14,11 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.focus.FocusRequester.Companion.createRefs
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.constraintlayout.widget.ConstraintLayout
-import com.example.mtapp.Models.AudioObject
-import com.example.mtapp.Models.Song
-import com.example.mtapp.R
-import kotlinx.coroutines.NonDisposableHandle.parent
+
 
 @Composable
 fun FullWidthBarAndCenteredContent() {

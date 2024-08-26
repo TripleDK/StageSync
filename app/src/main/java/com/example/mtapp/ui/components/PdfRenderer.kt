@@ -37,7 +37,6 @@ import kotlinx.coroutines.launch
 import java.io.File
 import kotlin.math.max
 import kotlin.math.min
-import kotlin.math.roundToInt
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -46,24 +45,27 @@ fun PdfViewer(
     onTurnFirstPage: () -> Unit,
     onTurnLastPage: () -> Unit,
     initialPage: Int = 0,
-    lastPage: Int = 0,
-
+    startPage: Int = 0,
+    lastPage: Int = -1,
     modifier: Modifier = Modifier
 ) {
     val pdfRendererHelper = remember {
         PdfRendererHelper(pdfFilePath)
     }
     val pageCount = pdfRendererHelper.getPageCount()
+    var actualLastPage by remember { mutableIntStateOf(if (lastPage == -1) pageCount - 1 else lastPage) }
     var currentPage by remember { mutableIntStateOf(initialPage) }
     val state = rememberLazyListState()
     val coroutineScope = rememberCoroutineScope()
 
     var sharedDragOffset by remember { mutableFloatStateOf(0f) }
 
-    LaunchedEffect(initialPage) {
+    LaunchedEffect(initialPage, lastPage) {
+        currentPage = initialPage
+        actualLastPage = if (lastPage == -1) pageCount - 1 else lastPage
         // Ensure that we scroll such that the currentPage is centered
         coroutineScope.launch {
-            state.scrollToItem(0)
+            state.scrollToItem(currentPage - startPage)
         }
     }
 
@@ -74,7 +76,8 @@ fun PdfViewer(
             modifier = Modifier.fillMaxHeight()
         ) {
 
-            itemsIndexed((initialPage..lastPage).toList()) { _, pageIndex ->
+
+            itemsIndexed((startPage..actualLastPage).toList()) { _, pageIndex ->
                 PdfPageView(
                     pdfFilePath = pdfFilePath,
                     pageIndex = pageIndex,
@@ -83,40 +86,38 @@ fun PdfViewer(
                     sharedDragOffset = sharedDragOffset,
                     onSwipeLeft = {
                         currentPage--
-                        if (currentPage < initialPage) {
-                            currentPage = initialPage
+                        if (currentPage < startPage) {
+                            currentPage = startPage
                             onTurnFirstPage()
-                            return@PdfPageView
                         }
                         coroutineScope.launch {
-                            Log.v(
-                                "MyMainActivity",
-                                "Swipe left to $currentPage, first visible item: ${state.firstVisibleItemIndex}"
-                            )
-                            state.animateScrollToItem(currentPage - initialPage)
-                            Log.v(
-                                "MyMainActivity",
-                                "New page $currentPage, first visible item: ${state.firstVisibleItemIndex}"
-                            )
+//                            Log.v(
+//                                "MyMainActivity",
+//                                "Swipe left to $currentPage, first visible item: ${state.firstVisibleItemIndex}"
+//                            )
+                            state.animateScrollToItem(currentPage - startPage)
+//                            Log.v(
+//                                "MyMainActivity",
+//                                "New page $currentPage, first visible item: ${state.firstVisibleItemIndex}"
+//                            )
                         }
                     },
                     onSwipeRight = {
                         currentPage++
-                        if (currentPage > lastPage) {
-                            currentPage = lastPage
+                        if (currentPage > actualLastPage) {
+                            currentPage = actualLastPage
                             onTurnLastPage()
-                            return@PdfPageView
                         }
                         coroutineScope.launch {
-                            Log.v(
-                                "MyMainActivity",
-                                "Swipe right to $currentPage, first visible item: ${state.firstVisibleItemIndex} "
-                            )
-                            state.animateScrollToItem(currentPage - initialPage)
-                            Log.v(
-                                "MyMainActivity",
-                                "New page $currentPage, first visible item: ${state.firstVisibleItemIndex}"
-                            )
+//                            Log.v(
+//                                "MyMainActivity",
+//                                "Swipe right to $currentPage, first visible item: ${state.firstVisibleItemIndex} "
+//                            )
+                            state.animateScrollToItem(currentPage - startPage)
+//                            Log.v(
+//                                "MyMainActivity",
+//                                "New page $currentPage, first visible item: ${state.firstVisibleItemIndex}"
+//                            )
                         }
                     },
                     onDragOffsetChange = { newOffset ->
@@ -133,10 +134,10 @@ fun PdfViewer(
                 pdfRendererHelper.close()
             }
         }
-        Text(
-            text = "currentPage: $currentPage",
-            modifier = modifier
-        )
+//        Text(
+//            text = "\ncurrentPage: $currentPage",
+//            modifier = modifier
+//        )
     }
 
 }
@@ -174,12 +175,12 @@ fun PdfPageView(
 
     var upCounter by remember { mutableStateOf(0) }
 
-    LaunchedEffect(isMainPage) {
-        Log.v(
-            "MainActivity",
-            "Recomposition: isMainPage = $isMainPage,  pageIndex: $pageIndex, currentPage = $currentPage"
-        )
-    }
+//    LaunchedEffect(isMainPage) {
+//        Log.v(
+//            "MainActivity",
+//            "Recomposition: isMainPage = $isMainPage,  pageIndex: $pageIndex, currentPage = $currentPage"
+//        )
+//    }
 
     var bitmap by remember { mutableStateOf<Bitmap?>(null) }
     Box(
@@ -250,19 +251,12 @@ fun PdfPageView(
                 translationY = offset.y
             )
     ) {
-        Text(
-            text = "Offset: (${offset.x.roundToInt()}, ${offset.y.roundToInt()}), Scale: ${
-                String.format(
-                    "%.2f",
-                    scale
-                )
-            }, " +
-                    "isMainPage: $isMainPage" +
-                    "\n isZoomedOut: $isZoomedOut," +
-                    "upCounter: $upCounter, pageIndex: $pageIndex",
-            modifier = modifier
-        )
-        DisposableEffect(pdfFilePath) {
+//        Text(
+//            text = "isMainPage: $isMainPage" +
+//                    "upCounter: $upCounter, pageIndex: $pageIndex",
+//            modifier = modifier
+//        )
+        DisposableEffect(pdfFilePath, pageIndex) {
             val pdfRendererHelper = PdfRendererHelper(pdfFilePath)
 
             bitmap = pdfRendererHelper.renderPage(pageIndex, contentWidth, contentHeight)
@@ -280,6 +274,9 @@ fun PdfPageView(
                     ImageView(context).apply {
                         setImageBitmap(bmp)
                     }
+                },
+                update = { view ->
+                    view.setImageBitmap(bmp)
                 }
             )
         }

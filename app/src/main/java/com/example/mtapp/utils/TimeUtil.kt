@@ -1,6 +1,6 @@
 package com.example.mtapp.utils
 
-fun formatTime(milliseconds: Float): String {
+fun formatTime(milliseconds: Int): String {
     val totalSeconds = (milliseconds / 1000).toInt()  // Convert milliseconds to total seconds
     val minutes = totalSeconds / 60  // Get the number of minutes
     val seconds = totalSeconds % 60  // Get the remaining seconds

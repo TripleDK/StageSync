@@ -46,6 +46,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -68,6 +69,7 @@ import com.example.mtapp.Models.Scene
 import com.example.mtapp.Models.Song
 import com.example.mtapp.R
 import com.example.mtapp.data.RehearsalOptions
+import com.example.mtapp.data.SceneState
 import com.example.mtapp.ui.StageSyncViewModel
 import com.example.mtapp.ui.components.PdfViewer
 import com.example.mtapp.utils.formatTime
@@ -84,9 +86,9 @@ fun RehearseScreen(
         if (uiState.currentScene != null) {
             NavHeadersAndSceneView(
                 uiState.currentScene!!,
-                uiState.currentHeader,
-                onNextScene = { viewModel.setNextScene() },
-                onPrevScene = { viewModel.setPrevScene() },
+                uiState.sceneStates[uiState.currentScene!!]!!,
+                onNextScene = { src -> viewModel.setNextScene(src) },
+                onPrevScene = { src -> viewModel.setPrevScene(src) },
                 onToggleRehearsalOptions = { option -> viewModel.toggleRehearsalOptions(option) },
                 modifier = Modifier
                     .weight(0.8f)
@@ -96,6 +98,7 @@ fun RehearseScreen(
 
             AudioPlayer(
                 uiState.currentScene!!,
+                uiState.sceneStates[uiState.currentScene!!]!!,
                 onNextScene = { viewModel.setNextScene() },
                 onPrevScene = { viewModel.setPrevScene() },
                 modifier = Modifier
@@ -112,22 +115,22 @@ fun RehearseScreen(
 @Composable
 fun NavHeadersAndSceneView(
     scene: Scene,
-    toggledHeader: RehearsalOptions,
-    onNextScene: () -> Unit,
-    onPrevScene: () -> Unit,
+    sceneState: SceneState,
+    onNextScene: (RehearsalOptions) -> Unit,
+    onPrevScene: (RehearsalOptions) -> Unit,
     onToggleRehearsalOptions: (RehearsalOptions) -> Unit,
     modifier: Modifier = Modifier
 ) {
     Column(modifier = modifier.fillMaxSize()) {
         NavHeaders(
             scene,
-            toggledHeader,
+            sceneState,
             onToggleRehearsalOptions = onToggleRehearsalOptions,
             modifier = Modifier.weight(0.1f)
         )
         SceneView(
             scene,
-            toggledHeader,
+            sceneState,
             onNextScene = onNextScene,
             onPrevScene = onPrevScene,
             modifier = Modifier.weight(0.9f)
@@ -138,7 +141,7 @@ fun NavHeadersAndSceneView(
 @Composable
 fun NavHeaders(
     scene: Scene,
-    toggledHeader: RehearsalOptions,
+    sceneState: SceneState,
     onToggleRehearsalOptions: (RehearsalOptions) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -150,7 +153,7 @@ fun NavHeaders(
     ) {
         Column(
             modifier = Modifier
-                .weight(if (toggledHeader == RehearsalOptions.Script) 1f else 0.3f)
+                .weight(if (sceneState.toggledHeader == RehearsalOptions.Script) 1f else 0.3f)
                 .background(Color.Green)
                 .fillMaxHeight()
                 .clickable { onToggleRehearsalOptions(RehearsalOptions.Script) }
@@ -173,7 +176,7 @@ fun NavHeaders(
                 .weight(
                     if (scene !is Song) 0.0001f
                     else {
-                        if (toggledHeader == RehearsalOptions.Score) 1f else 0.3f
+                        if (sceneState.toggledHeader == RehearsalOptions.Score) 1f else 0.3f
                     }
                 )
                 .background(Color.Cyan)
@@ -194,7 +197,7 @@ fun NavHeaders(
         }
         Column(
             modifier = Modifier
-                .weight(if (toggledHeader == RehearsalOptions.Scene) 1f else 0.3f)
+                .weight(if (sceneState.toggledHeader == RehearsalOptions.Scene) 1f else 0.3f)
                 .background(Color.Yellow)
                 .fillMaxHeight()
                 .clickable { onToggleRehearsalOptions(RehearsalOptions.Scene) }
@@ -217,9 +220,9 @@ fun NavHeaders(
 @Composable
 fun SceneView(
     scene: Scene,
-    toggledHeader: RehearsalOptions,
-    onNextScene: () -> Unit,
-    onPrevScene: () -> Unit,
+    sceneState: SceneState,
+    onNextScene: (RehearsalOptions) -> Unit,
+    onPrevScene: (RehearsalOptions) -> Unit,
     modifier: Modifier = Modifier
 ) {
     Row(
@@ -229,23 +232,16 @@ fun SceneView(
     ) {
         Box(
             modifier = Modifier
-                .weight(if (toggledHeader == RehearsalOptions.Script) 1f else 0.001f)
+                .weight(if (sceneState.toggledHeader == RehearsalOptions.Script) 1f else 0.001f)
         ) {
             if (scene.scriptPath != null) {
                 PdfViewer(
                     pdfFilePath = scene.scriptPath!!,
-                    initialPage = scene.startPage!! - 1,
+                    initialPage = sceneState.scriptPage - 1,
+                    startPage = scene.startPage!! - 1,
                     lastPage = scene.endPage - 1,
-                    onTurnLastPage = {
-                        var oldScene = scene
-                        onNextScene()
-                        var newScene = scene
-                        if (oldScene.scriptPath == newScene.scriptPath) {
-
-                        }
-
-                    },
-                    onTurnFirstPage = onPrevScene,
+                    onTurnLastPage = { onNextScene(RehearsalOptions.Script) },
+                    onTurnFirstPage = { onPrevScene(RehearsalOptions.Script) },
                     modifier = Modifier.fillMaxSize()
                 )
             } else {
@@ -258,15 +254,16 @@ fun SceneView(
         }
         Box(
             modifier = Modifier
-                .weight(if (toggledHeader == RehearsalOptions.Score) 1f else 0.001f)
+                .weight(if (sceneState.toggledHeader == RehearsalOptions.Score) 1f else 0.001f)
         ) {
-            if (scene is Song) {
+            if (scene is Song && scene.scorePath != null) {
                 PdfViewer(
                     pdfFilePath = scene.scorePath!!,
-                    initialPage = scene.scoreStartPage!! - 1,
-                    lastPage = scene.scoreEndPage!! - 1,
-                    onTurnLastPage = onNextScene,
-                    onTurnFirstPage = onPrevScene,
+                    initialPage = sceneState.scorePage?.minus(1) ?: 0,
+                    startPage = if (scene.scoreStartPage != null) scene.scoreStartPage!! - 1 else 1,
+                    lastPage = if (scene.scoreEndPage != null) scene.scoreEndPage!! - 1 else -1,
+                    onTurnLastPage = { onNextScene(RehearsalOptions.Score) },
+                    onTurnFirstPage = { onPrevScene(RehearsalOptions.Score) },
                     modifier = Modifier.fillMaxSize()
                 )
             } else {
@@ -279,7 +276,7 @@ fun SceneView(
         }
         Box(
             modifier = Modifier
-                .weight(if (toggledHeader == RehearsalOptions.Scene) 1f else 0.001f)
+                .weight(if (sceneState.toggledHeader == RehearsalOptions.Scene) 1f else 0.001f)
         ) {
 
         }
@@ -289,6 +286,7 @@ fun SceneView(
 @Composable
 fun AudioPlayer(
     scene: Scene,
+    sceneState: SceneState, //ToDo: Us this to handle playback speed, currently selected audioPath, loop1, etc.
     onNextScene: () -> Unit,
     onPrevScene: () -> Unit,
     modifier: Modifier = Modifier
@@ -313,6 +311,7 @@ fun AudioPlayer(
         } else
             null
     }
+    var currentPosition by remember { mutableStateOf(0) }
 
     DisposableEffect(Unit) {
         onDispose {
@@ -321,14 +320,29 @@ fun AudioPlayer(
     }
 
 
+    //The drag function should then set the position on its own time
+    LaunchedEffect(isPlaying) {
+        while (mediaPlayer != null && isPlaying) {
+            currentPosition = mediaPlayer.currentPosition
+            delay(100)
+        }
+    }
+
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
-        // modifier = Modifier.fillMaxSize()
     ) {
-        MediaPlayerTimeLine(mediaPlayer)
-        Text(
-            text = stringResource(scene.name),
+        MediaPlayerTimeLine(
+            duration = mediaPlayer?.duration ?: 0,
+            currentPosition = currentPosition,
+            onTimeLineDrag = { newCurrentPosition ->
+                mediaPlayer?.seekTo(newCurrentPosition)
+            }
         )
+//        Text(
+//            text = "currentPosition: " + currentPosition + ", " + stringResource(scene.name) + ", duration: " + mediaPlayer?.duration
+//                ?: 0,
+//        )
+        Text(text = stringResource(scene.name))
 
         Box(
             modifier = Modifier
@@ -423,31 +437,22 @@ fun AudioPlayer(
 }
 
 @Composable
-fun MediaPlayerTimeLine(mediaPlayer: MediaPlayer?) {
+fun MediaPlayerTimeLine(
+    duration: Int,
+    currentPosition: Int,
+    onTimeLineDrag: (Int) -> Unit,
+    modifier: Modifier = Modifier
+) {
     val circleSize = 24.dp
     val circleSizePx = with(LocalDensity.current) { circleSize.toPx() }
     var timeLineSize by remember { mutableStateOf(Size.Zero) }
 
-    var duration by remember { mutableStateOf(1f) }
-    var currentPosition by remember { mutableStateOf(0f) }
-    var circleX by remember { mutableStateOf(0f) }
-
-    LaunchedEffect(mediaPlayer) {
-        if (mediaPlayer != null)
-            duration = mediaPlayer.duration.toFloat()
+    var circleX = remember(currentPosition, duration) {
+        if (duration > 0)
+            currentPosition.toFloat() / duration.toFloat() * timeLineSize.width - circleSizePx / 2
+        else 0f
     }
-
-    LaunchedEffect(Unit) {
-        while (mediaPlayer != null) {
-            currentPosition = mediaPlayer.currentPosition.toFloat()
-            circleX = (currentPosition / duration) * timeLineSize.width - circleSizePx / 2
-            println("Current Position: $currentPosition, Circle X: $circleX")
-
-            delay(100)
-        }
-    }
-
-    //Spacer(modifier = Modifier.height(5.dp))
+    val currentPositionState = rememberUpdatedState(currentPosition)
     Box(
         modifier = Modifier
             .background(Color.Red)
@@ -464,8 +469,10 @@ fun MediaPlayerTimeLine(mediaPlayer: MediaPlayer?) {
                 .background(Color.Green)
                 .pointerInput(Unit) {
                     detectDragGestures { _, dragAmount ->
-                        currentPosition += duration * dragAmount.x / timeLineSize.width
-                        mediaPlayer?.seekTo(currentPosition.toInt())
+                        val dragDelta = (duration * dragAmount.x / timeLineSize.width).toInt()
+                        val newCurrentPosition =
+                            (currentPositionState.value + dragDelta).coerceIn(0, duration)
+                        onTimeLineDrag(newCurrentPosition)
                     }
                 }
         )
@@ -569,7 +576,7 @@ fun RehearseScreenPreview() {
         onNextScene = {},
         onPrevScene = {},
         onToggleRehearsalOptions = {},
-        toggledHeader = RehearsalOptions.Scene
+        sceneState = SceneState()
     )
 }
 
@@ -584,7 +591,8 @@ fun AudioPlayerPreview() {
             masterAudio = AudioObject(R.string.backing_track, "")
         ),
         onNextScene = {},
-        onPrevScene = {}
+        onPrevScene = {},
+        sceneState = SceneState()
     )
 }
 

@@ -78,7 +78,7 @@ object DataSource {
             Scene(
                 name = R.string.wiz_oz_scene3,
                 startPage = 4,
-                endPage = 6
+                endPage = 5
             ).apply {
                 scriptPath = copyFileFromAssetsToInternalStorage(
                     context,
@@ -89,7 +89,7 @@ object DataSource {
         val wizardOzScene4 =
             Song(
                 name = R.string.wiz_oz_scene4,
-                startPage = 6,
+                startPage = 5,
                 endPage = 6
             ).apply {
                 scriptPath = copyFileFromAssetsToInternalStorage(

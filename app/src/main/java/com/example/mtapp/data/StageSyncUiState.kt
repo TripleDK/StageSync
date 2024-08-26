@@ -2,9 +2,48 @@ package com.example.mtapp.data
 
 import com.example.mtapp.Models.Scene
 import com.example.mtapp.Models.Show
+import com.example.mtapp.Models.Song
 
 data class StageSyncUiState(
     val currentShow: Show? = null,
     val currentScene: Scene? = null,
-    val currentHeader: RehearsalOptions = RehearsalOptions.Script
-)
+    val sceneStates: Map<Scene, SceneState> = emptyMap()
+) {
+    private val scenes: List<Scene>? = currentShow?.scenes
+
+    fun updateCurrentShow(show: Show): StageSyncUiState {
+        return copy(
+            currentShow = show,
+            currentScene = null
+        )
+    }
+
+    fun updateCurrentScene(scene: Scene): StageSyncUiState {
+        val updatedSceneStates = sceneStates.toMutableMap()
+
+        if (!updatedSceneStates.containsKey(scene)) {
+            updatedSceneStates[scene] = SceneState(
+                scorePage = if (scene is Song) {
+                    scene.scoreStartPage ?: 0
+                } else {
+                    0
+                },
+                scriptPage = scene.startPage
+            )
+        }
+        return if (scenes != null && scenes.contains(scene)) {
+            copy(
+                currentScene = scene,
+                sceneStates = updatedSceneStates
+            )
+        } else {
+            this
+        }
+    }
+
+    fun updateSceneState(scene: Scene, newSceneState: SceneState): StageSyncUiState {
+        return copy(sceneStates = sceneStates.toMutableMap().apply {
+            this[scene] = newSceneState
+        })
+    }
+}
