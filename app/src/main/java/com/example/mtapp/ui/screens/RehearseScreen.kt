@@ -1,7 +1,6 @@
 package com.example.mtapp.ui.screens
 
-import android.media.MediaPlayer
-import android.net.Uri
+import android.util.Log
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -40,10 +39,11 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
@@ -64,16 +64,18 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.unit.toSize
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.mtapp.Models.AudioObject
 import com.example.mtapp.Models.Scene
 import com.example.mtapp.Models.Song
 import com.example.mtapp.R
 import com.example.mtapp.data.RehearsalOptions
 import com.example.mtapp.data.SceneState
+import com.example.mtapp.ui.MediaPlayerViewModel
+import com.example.mtapp.ui.MediaPlayerViewModelFactory
 import com.example.mtapp.ui.StageSyncViewModel
 import com.example.mtapp.ui.components.PdfViewer
 import com.example.mtapp.utils.formatTime
-import kotlinx.coroutines.delay
 import kotlin.math.roundToInt
 
 @Composable
@@ -101,6 +103,7 @@ fun RehearseScreen(
                 uiState.sceneStates[uiState.currentScene!!]!!,
                 onNextScene = { viewModel.setNextScene() },
                 onPrevScene = { viewModel.setPrevScene() },
+                onAudioChange = { audioPath -> viewModel.updateSceneAudioPath(audioPath) },
                 modifier = Modifier
                     .weight(0.2f)
                     .fillMaxWidth()
@@ -238,7 +241,7 @@ fun SceneView(
                 PdfViewer(
                     pdfFilePath = scene.scriptPath!!,
                     initialPage = sceneState.scriptPage - 1,
-                    startPage = scene.startPage!! - 1,
+                    startPage = scene.startPage - 1,
                     lastPage = scene.endPage - 1,
                     onTurnLastPage = { onNextScene(RehearsalOptions.Script) },
                     onTurnFirstPage = { onPrevScene(RehearsalOptions.Script) },
@@ -289,88 +292,43 @@ fun AudioPlayer(
     sceneState: SceneState, //ToDo: Us this to handle playback speed, currently selected audioPath, loop1, etc.
     onNextScene: () -> Unit,
     onPrevScene: () -> Unit,
+    onAudioChange: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    var isPlaying by remember { mutableStateOf(false) }
     val context = LocalContext.current
 
-    var audioPath by remember { mutableStateOf(if (scene is Song) scene.masterAudio?.audioPath else "") }
-    val mediaPlayer = remember {
-        if (audioPath?.isNotEmpty() == true) {
-            MediaPlayer().apply {
-                try {
-                    setDataSource(context, Uri.parse(audioPath)) // Use URI for file path
-                    prepare() // Prepare the media player
-                    setOnCompletionListener {
-                        isPlaying = false
-                    }
-                } catch (e: Exception) {
-                    e.printStackTrace() // Handle or log the exception
-                }
-            }
-        } else
-            null
-    }
-    var currentPosition by remember { mutableStateOf(0) }
-
-    DisposableEffect(Unit) {
-        onDispose {
-            mediaPlayer?.release()
-        }
-    }
+    val mediaPlayerViewModel: MediaPlayerViewModel =
+        viewModel(factory = MediaPlayerViewModelFactory(context))
 
 
-    //The drag function should then set the position on its own time
-    LaunchedEffect(isPlaying) {
-        while (mediaPlayer != null && isPlaying) {
-            currentPosition = mediaPlayer.currentPosition
-            delay(100)
-        }
+    LaunchedEffect(scene) {
+        println("Scene changed! Resetting audioplayer...")
+        mediaPlayerViewModel.resetMediaPlayer(sceneState.audioPath)
     }
 
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         MediaPlayerTimeLine(
-            duration = mediaPlayer?.duration ?: 0,
-            currentPosition = currentPosition,
+            mediaPlayerViewModel,
             onTimeLineDrag = { newCurrentPosition ->
-                mediaPlayer?.seekTo(newCurrentPosition)
+                mediaPlayerViewModel.seekTo(newCurrentPosition)
             }
         )
-//        Text(
-//            text = "currentPosition: " + currentPosition + ", " + stringResource(scene.name) + ", duration: " + mediaPlayer?.duration
-//                ?: 0,
-//        )
         Text(text = stringResource(scene.name))
 
         Box(
             modifier = Modifier
                 .fillMaxWidth()
         ) {
-            if (scene is Song && scene.tracks != null) {
-                audioPath?.let { it1 ->
-                    DropdownMenu(
-                        optionsDisplayNames = scene.tracks!!.map { tr -> stringResource(tr.name) }
-                                + stringResource(scene.masterAudio!!.name),
-                        optionsValues = scene.tracks!!.map { tr -> tr.audioPath } + scene.masterAudio?.audioPath,
-                        selectedOption = it1,
-                        onOptionSelected = { option ->
-                            audioPath = option
-                            if (mediaPlayer != null) {
-                                val currentAudioPostion = mediaPlayer.currentPosition
-                                mediaPlayer.reset()
-                                mediaPlayer.setDataSource(context, Uri.parse(audioPath))
-                                mediaPlayer.prepare()
-                                mediaPlayer.seekTo(currentAudioPostion)
-
-                                if (isPlaying)
-                                    mediaPlayer.start()
-                            }
-                        },
-                        modifier = Modifier.align(Alignment.CenterStart)
-                    )
-                }
+            if (scene is Song) {
+                AudioDropdown(
+                    scene,
+                    sceneState,
+                    onAudioChange,
+                    mediaPlayerViewModel,
+                    modifier = Modifier.align(Alignment.CenterStart)
+                )
             } else {
                 //Show characters with lines
                 DropdownMenu(
@@ -397,18 +355,17 @@ fun AudioPlayer(
                     )
                 }
                 IconButton(onClick = {
-                    if (isPlaying)
-                        mediaPlayer?.pause()
+                    if (mediaPlayerViewModel.isPlaying)
+                        mediaPlayerViewModel.pausePlayback()
                     else
-                        mediaPlayer?.start()
-                    isPlaying = !isPlaying
+                        mediaPlayerViewModel.startPlayback()
                 }) {
                     Icon(
-                        if (isPlaying)
+                        if (mediaPlayerViewModel.isPlaying)
                             Icons.Filled.Pause
                         else
                             Icons.Filled.PlayArrow,
-                        contentDescription = if (isPlaying) "Pause" else "Play"
+                        contentDescription = if (mediaPlayerViewModel.isPlaying) "Pause" else "Play"
                     )
                 }
                 IconButton(
@@ -437,9 +394,45 @@ fun AudioPlayer(
 }
 
 @Composable
+fun AudioDropdown(
+    scene: Song,
+    sceneState: SceneState,
+    onAudioChange: (String) -> Unit,
+    mediaPlayerViewModel: MediaPlayerViewModel,
+    modifier: Modifier = Modifier
+) {
+    // Precompute display names and values in a composable context
+    val optionsDisplayNames by remember(scene) {
+        derivedStateOf {
+            scene.tracks.map { tr -> tr.name } + scene.masterAudio?.name
+        }
+    }
+    val optionsValues by remember(scene) {
+        derivedStateOf {
+            scene.tracks.map { tr -> tr.audioPath } + scene.masterAudio?.audioPath
+        }
+    }
+
+    Log.v("test", "updating audiodropdownmenu")
+    sceneState.audioPath?.let { audioPath ->
+        key(audioPath) {
+            Log.v("test", audioPath)
+            DropdownMenu(
+                optionsDisplayNames = optionsDisplayNames,
+                optionsValues = optionsValues,
+                selectedOption = sceneState.audioPath,
+                onOptionSelected = { option ->
+                    onAudioChange(option)
+                    mediaPlayerViewModel.changeAudio(option)
+                }
+            )
+        }
+    }
+}
+
+@Composable
 fun MediaPlayerTimeLine(
-    duration: Int,
-    currentPosition: Int,
+    mediaPlayerViewModel: MediaPlayerViewModel,
     onTimeLineDrag: (Int) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -447,12 +440,14 @@ fun MediaPlayerTimeLine(
     val circleSizePx = with(LocalDensity.current) { circleSize.toPx() }
     var timeLineSize by remember { mutableStateOf(Size.Zero) }
 
-    var circleX = remember(currentPosition, duration) {
-        if (duration > 0)
-            currentPosition.toFloat() / duration.toFloat() * timeLineSize.width - circleSizePx / 2
+    val circleX = remember(mediaPlayerViewModel.currentPosition, mediaPlayerViewModel.duration) {
+        if (mediaPlayerViewModel.duration > 0)
+            mediaPlayerViewModel.currentPosition.toFloat() / mediaPlayerViewModel.duration.toFloat() * timeLineSize.width - circleSizePx / 2
         else 0f
     }
-    val currentPositionState = rememberUpdatedState(currentPosition)
+    val currentPositionState = rememberUpdatedState(mediaPlayerViewModel.currentPosition)
+    val durationState = rememberUpdatedState(mediaPlayerViewModel.duration)
+
     Box(
         modifier = Modifier
             .background(Color.Red)
@@ -469,15 +464,29 @@ fun MediaPlayerTimeLine(
                 .background(Color.Green)
                 .pointerInput(Unit) {
                     detectDragGestures { _, dragAmount ->
-                        val dragDelta = (duration * dragAmount.x / timeLineSize.width).toInt()
+                        val dragDelta =
+                            (durationState.value * dragAmount.x / timeLineSize.width).toInt()
+                        Log.v(
+                            "dragTest",
+                            "dragDelta: " + dragDelta + " durationState.value " + durationState.value
+                        )
                         val newCurrentPosition =
-                            (currentPositionState.value + dragDelta).coerceIn(0, duration)
+                            (currentPositionState.value + dragDelta).coerceIn(
+                                0,
+                                durationState.value
+                            )
+                        Log.v(
+                            "dragTest",
+                            "newCurrentPosition: " + newCurrentPosition + " currentPositionState.value " + currentPositionState.value
+                        )
                         onTimeLineDrag(newCurrentPosition)
                     }
                 }
         )
         Text(
-            text = formatTime(currentPosition) + "/" + formatTime(duration),
+            text = formatTime(mediaPlayerViewModel.currentPosition) + "/" + formatTime(
+                mediaPlayerViewModel.duration
+            ),
             modifier = Modifier
                 .align(Alignment.TopCenter)
         )
@@ -488,17 +497,18 @@ fun MediaPlayerTimeLine(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DropdownMenu(
-    optionsDisplayNames: List<String>,
+    optionsDisplayNames: List<Int?>,
     optionsValues: List<String?>,
     selectedOption: String,
     onOptionSelected: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
     require(optionsDisplayNames.size == optionsValues.size) { "Visible options and actual values must have the same size." }
+    Log.v("test", "updating dropdownmenu")
 
     var expanded by remember { mutableStateOf(false) }
     val selectedOptionDisplayName =
-        optionsDisplayNames.getOrNull(optionsValues.indexOf(selectedOption)) ?: ""
+        optionsDisplayNames.getOrNull(optionsValues.indexOf(selectedOption))
 
     ExposedDropdownMenuBox(
         expanded = expanded,
@@ -516,13 +526,12 @@ fun DropdownMenu(
         ) {
             Row(
                 modifier = Modifier
-                    //  .fillMaxWidth()
-                    .background(Color.Yellow)
+                    // .background(Color.Yellow)
                     .padding(2.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 BasicTextField(
-                    value = selectedOptionDisplayName,
+                    value = selectedOptionDisplayName?.let { stringResource(it) } ?: "",
                     onValueChange = {},
                     enabled = false,
                     singleLine = true,
@@ -532,7 +541,7 @@ fun DropdownMenu(
                         .padding(0.dp) // Padding inside the text field
                 ) { innerTextField ->
                     TextFieldDefaults.DecorationBox(
-                        value = selectedOptionDisplayName,
+                        value = selectedOptionDisplayName?.let { stringResource(it) } ?: "",
                         visualTransformation = VisualTransformation.None,
                         innerTextField = innerTextField,
                         singleLine = true,
@@ -558,7 +567,7 @@ fun DropdownMenu(
                         optionsValues[index]?.let { onOptionSelected(it) }
                         expanded = false
                     },
-                    text = { Text(optionDisplayName!!) })
+                    text = { Text(stringResource(optionDisplayName!!)) })
             }
         }
     }
@@ -592,6 +601,7 @@ fun AudioPlayerPreview() {
         ),
         onNextScene = {},
         onPrevScene = {},
+        onAudioChange = {},
         sceneState = SceneState()
     )
 }
@@ -600,7 +610,7 @@ fun AudioPlayerPreview() {
 @Composable
 fun DropdownPreview() {
     DropdownMenu(
-        optionsDisplayNames = listOf("test", "test2"),
+        optionsDisplayNames = listOf(1, 2),
         optionsValues = listOf("value", "value2"),
         selectedOption = "value",
         onOptionSelected = { }

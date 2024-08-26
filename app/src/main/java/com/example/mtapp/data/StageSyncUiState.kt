@@ -1,5 +1,6 @@
 package com.example.mtapp.data
 
+import android.util.Log
 import com.example.mtapp.Models.Scene
 import com.example.mtapp.Models.Show
 import com.example.mtapp.Models.Song
@@ -28,7 +29,8 @@ data class StageSyncUiState(
                 } else {
                     0
                 },
-                scriptPage = scene.startPage
+                scriptPage = scene.startPage,
+                audioPath = if (scene is Song) scene.masterAudio?.audioPath else ""
             )
         }
         return if (scenes != null && scenes.contains(scene)) {
@@ -42,6 +44,7 @@ data class StageSyncUiState(
     }
 
     fun updateSceneState(scene: Scene, newSceneState: SceneState): StageSyncUiState {
+        Log.v("test", "updated scene state!")
         return copy(sceneStates = sceneStates.toMutableMap().apply {
             this[scene] = newSceneState
         })

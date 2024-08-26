@@ -17,7 +17,6 @@ import com.example.mtapp.data.StageSyncUiState
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.update
 
 class StageSyncViewModel(private val stageSyncRepository: StageSyncRepository) : ViewModel() {
     private val _uiState = MutableStateFlow(StageSyncUiState())
@@ -53,7 +52,8 @@ class StageSyncViewModel(private val stageSyncRepository: StageSyncRepository) :
                     } else {
                         0
                     },
-                    scriptPage = nextScene.startPage
+                    scriptPage = nextScene.startPage,
+                    audioPath = if (currentScene is Song) currentScene.masterAudio?.audioPath else ""
                 )
             }
 
@@ -71,7 +71,7 @@ class StageSyncViewModel(private val stageSyncRepository: StageSyncRepository) :
                 if (nextScene == null)
                     return
 
-                setSceneState(nextScene, nextState!!.copy(scriptPage = newScriptPage))
+                setSceneState(nextScene, nextState.copy(scriptPage = newScriptPage))
             }
             if (source == RehearsalOptions.Score) {
                 //Since we swipe from score, we go to the next song and skip normal scenes
@@ -98,7 +98,7 @@ class StageSyncViewModel(private val stageSyncRepository: StageSyncRepository) :
 
                     _uiState.value.updateSceneState(
                         nextScene,
-                        nextState!!.copy(scorePage = newScorePage)
+                        nextState.copy(scorePage = newScorePage)
                     )
                 }
             }
@@ -135,7 +135,8 @@ class StageSyncViewModel(private val stageSyncRepository: StageSyncRepository) :
                     } else {
                         0
                     },
-                    scriptPage = prevScene.startPage
+                    scriptPage = prevScene.startPage,
+                    audioPath = if (currentScene is Song) currentScene.masterAudio?.audioPath else ""
                 )
             }
             if (source == RehearsalOptions.Script) {
@@ -152,7 +153,7 @@ class StageSyncViewModel(private val stageSyncRepository: StageSyncRepository) :
                 if (prevScene == null)
                     return
 
-                setSceneState(prevScene, prevState!!.copy(scriptPage = newScriptPage))
+                setSceneState(prevScene, prevState.copy(scriptPage = newScriptPage))
             }
             if (source == RehearsalOptions.Score) {
                 //Since we swipe from score, we go to the next song and skip normal scenes
@@ -179,7 +180,7 @@ class StageSyncViewModel(private val stageSyncRepository: StageSyncRepository) :
 
                     _uiState.value.updateSceneState(
                         prevScene,
-                        prevState!!.copy(scorePage = newScorePage)
+                        prevState.copy(scorePage = newScorePage)
                     )
                 }
             }
@@ -205,6 +206,12 @@ class StageSyncViewModel(private val stageSyncRepository: StageSyncRepository) :
         val scene = requireScene()
         val sceneState = requireSceneState(scene)
         setSceneState(scene, sceneState.copy(toggledHeader = options))
+    }
+
+    fun updateSceneAudioPath(audioPath: String) {
+        val scene = requireScene()
+        val sceneState = requireSceneState(scene)
+        setSceneState(scene, sceneState.copy(audioPath = audioPath))
     }
 
     private fun requireShow(): Show {

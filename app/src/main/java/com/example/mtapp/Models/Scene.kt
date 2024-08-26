@@ -27,7 +27,7 @@ data class Song(
     var scoreStartPage: Int? = null,
     var scoreEndPage: Int? = null,
     var masterAudio: AudioObject? = null,
-    var tracks: List<AudioObject>? = null
+    var tracks: List<AudioObject> = emptyList()
 ) : Scene(
     name = name,
     scriptPath = scriptPath,
