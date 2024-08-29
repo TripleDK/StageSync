@@ -581,6 +581,8 @@ fun RehearseScreenPreview() {
             name = R.string.wiz_oz_scene1,
             startPage = 3,
             endPage = 3,
+            actNumber = 1,
+            sceneNumber = 1,
         ),
         onNextScene = {},
         onPrevScene = {},
@@ -595,6 +597,8 @@ fun AudioPlayerPreview() {
     AudioPlayer(
         scene = Song(
             name = R.string.wiz_oz_scene1,
+            actNumber = 1,
+            sceneNumber = 1,
             startPage = 3,
             endPage = 3,
             masterAudio = AudioObject(R.string.backing_track, "")

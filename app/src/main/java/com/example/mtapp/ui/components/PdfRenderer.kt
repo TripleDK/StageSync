@@ -13,9 +13,15 @@ import androidx.compose.foundation.gestures.forEachGesture
 import androidx.compose.foundation.gestures.rememberTransformableState
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -27,11 +33,14 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.text.style.LineHeightStyle
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import kotlinx.coroutines.launch
 import java.io.File
@@ -42,8 +51,8 @@ import kotlin.math.min
 @Composable
 fun PdfViewer(
     pdfFilePath: String,
-    onTurnFirstPage: () -> Unit,
-    onTurnLastPage: () -> Unit,
+    onTurnFirstPage: () -> Unit = {},
+    onTurnLastPage: () -> Unit = {},
     initialPage: Int = 0,
     startPage: Int = 0,
     lastPage: Int = -1,
@@ -140,6 +149,37 @@ fun PdfViewer(
 //        )
     }
 
+}
+
+@Composable
+fun FullScreenPdfViewer(
+    isVisible: Boolean,
+    onDismiss: () -> Unit,
+    pdfFilePath: String // Pass the path to your PDF
+) {
+    if (isVisible) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.White)
+        ) {
+            // PDF Viewer content
+            PdfViewer(pdfFilePath) // Your PDF viewer composable
+
+            // Dismiss button
+            IconButton(
+                onClick = onDismiss,
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(16.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Close,
+                    contentDescription = "Close"
+                )
+            }
+        }
+    }
 }
 
 

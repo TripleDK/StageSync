@@ -71,7 +71,7 @@ class MediaPlayerViewModel(private val context: Context) : ViewModel() {
     private fun updateCurrentPosition() {
         viewModelScope.launch {
             while (isPlaying && mediaPlayer?.isPlaying == true) {
-                currentPosition = mediaPlayer?.currentPosition ?: 0
+                currentPosition = mediaPlayer.currentPosition
                 delay(100)
             }
         }

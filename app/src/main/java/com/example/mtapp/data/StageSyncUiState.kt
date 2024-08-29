@@ -12,7 +12,7 @@ data class StageSyncUiState(
 ) {
     private val scenes: List<Scene>? = currentShow?.scenes
 
-    fun updateCurrentShow(show: Show): StageSyncUiState {
+    fun updateCurrentShow(show: Show?): StageSyncUiState {
         return copy(
             currentShow = show,
             currentScene = null

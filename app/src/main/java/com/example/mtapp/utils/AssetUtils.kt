@@ -8,9 +8,8 @@ import java.io.InputStream
 fun copyFileFromAssetsToInternalStorage(
     context: Context,
     assetFilePath: String,
-    outputFilePath: String
 ): String {
-    val file = File(context.filesDir, outputFilePath)
+    val file = File(context.filesDir, assetFilePath)
     file.parentFile?.mkdirs()
 
     context.assets.open(assetFilePath).use { inputStream ->

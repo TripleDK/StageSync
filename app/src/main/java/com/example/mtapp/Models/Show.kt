@@ -7,5 +7,6 @@ import kotlinx.parcelize.Parcelize
 @Parcelize
 data class Show(
     @StringRes val name: Int,
-    val scenes: List<Scene>
+    val scenes: List<Scene>,
+    var schedulePath: String? = null
 ) : Parcelable

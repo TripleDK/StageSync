@@ -24,7 +24,7 @@ class StageSyncViewModel(private val stageSyncRepository: StageSyncRepository) :
 
     internal val shows = stageSyncRepository.shows
 
-    fun setSelectedShow(show: Show) {
+    fun setSelectedShow(show: Show?) {
         _uiState.value = _uiState.value.updateCurrentShow(show)
     }
 

@@ -50,7 +50,11 @@ fun StageSyncApp(
                 composable(route = StageSyncScreen.Scenes.name) {
                     uiState.currentShow?.let { curShow ->
                         ScenesListContent(
-                            curShow.scenes,
+                            curShow,
+                            onBack = {
+                                stageSyncViewModel.setSelectedShow(null)
+                                navController.navigate(StageSyncScreen.Shows.name)
+                            },
                             onSceneClicked = {
                                 stageSyncViewModel.setSelectedScene(it)
                                 navController.navigate(StageSyncScreen.Rehearse.name)

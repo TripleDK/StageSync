@@ -9,6 +9,8 @@ import kotlinx.parcelize.RawValue
 @Parcelize
 open class Scene(
     @StringRes open var name: Int,
+    open var actNumber: Int,
+    open var sceneNumber: Int,
     open var scriptPath: String? = null,
     open var scorePath: String? = null,
     open var startPage: Int,
@@ -20,6 +22,8 @@ open class Scene(
 @Parcelize
 data class Song(
     @StringRes override var name: Int,
+    override var actNumber: Int,
+    override var sceneNumber: Int,
     override var scriptPath: String? = null,
     override var scorePath: String? = null,
     override var startPage: Int,
@@ -30,6 +34,8 @@ data class Song(
     var tracks: List<AudioObject> = emptyList()
 ) : Scene(
     name = name,
+    actNumber = actNumber,
+    sceneNumber = sceneNumber,
     scriptPath = scriptPath,
     scorePath = scorePath,
     startPage = startPage,
