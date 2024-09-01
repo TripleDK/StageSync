@@ -9,15 +9,17 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import com.example.mtapp.utils.PreviewContext
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
-class MediaPlayerViewModel(private val context: Context) : ViewModel() {
+open class MediaPlayerViewModel(private val context: Context) : ViewModel() {
     var currentPosition by mutableStateOf(0)
         private set
     var duration by mutableStateOf(0)
         private set
     var isPlaying by mutableStateOf(false)
+    var volume by mutableStateOf(1.0f)
 
     private var mediaPlayer: MediaPlayer = MediaPlayer().apply {
         setOnCompletionListener { onCompletion() }
@@ -79,13 +81,21 @@ class MediaPlayerViewModel(private val context: Context) : ViewModel() {
 }
 
 class MediaPlayerViewModelFactory(
-    private val context: Context
+    private val context: Context,
+    private val isPreview: Boolean = false
 ) : ViewModelProvider.Factory {
     @Suppress("UNCHECKED_CAST")
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(MediaPlayerViewModel::class.java)) {
-            return MediaPlayerViewModel(context) as T
+            return if (isPreview)
+                PreviewMediaPlayerViewModel() as T
+            else
+                MediaPlayerViewModel(context) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")
     }
+}
+
+class PreviewMediaPlayerViewModel : MediaPlayerViewModel(context = PreviewContext()) {
+
 }

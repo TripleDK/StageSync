@@ -12,7 +12,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.mtapp.R
-import com.example.mtapp.ui.screens.RehearseScreen
+import com.example.mtapp.ui.screens.rehearsalscreen.RehearseScreen
 import com.example.mtapp.ui.screens.ScenesListContent
 import com.example.mtapp.ui.screens.ShowsListContent
 import com.example.mtapp.ui.theme.MTAPPTheme

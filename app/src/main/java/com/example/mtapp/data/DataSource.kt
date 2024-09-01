@@ -4,6 +4,7 @@ import android.content.Context
 import com.example.mtapp.Models.AudioObject
 import com.example.mtapp.Models.Scene
 import com.example.mtapp.Models.Show
+import com.example.mtapp.Models.ShowCharacter
 import com.example.mtapp.Models.Song
 import com.example.mtapp.R
 import com.example.mtapp.utils.copyFileFromAssetsToInternalStorage
@@ -923,8 +924,9 @@ object DataSource {
         shows = listOf(
             Show(
                 name = R.string.addams_family,
-                scenes = addamsFamScenes
-            ).apply {
+                scenes = addamsFamScenes,
+
+                ).apply {
                 schedulePath = copyFileFromAssetsToInternalStorage(
                     context,
                     "CA_AddamsFamily_24/ADDAMS FAMILY SCHEDULE.pdf",
@@ -932,7 +934,27 @@ object DataSource {
             },
             Show(
                 name = R.string.wizard_of_oz,
-                scenes = wizardOzScenes
+                scenes = wizardOzScenes,
+                characters = listOf(
+                    ShowCharacter(
+                        name = "Ike"
+                    ),
+                    ShowCharacter(
+                        name = "Jan"
+                    ),
+                    ShowCharacter(
+                        name = "Dorothy"
+                    ),
+                    ShowCharacter(
+                        name = "Toto"
+                    ),
+                    ShowCharacter(
+                        name = "Scarecrow"
+                    ),
+                    ShowCharacter(
+                        name = "Dame"
+                    )
+                )
             ).apply {
                 schedulePath = copyFileFromAssetsToInternalStorage(
                     context,

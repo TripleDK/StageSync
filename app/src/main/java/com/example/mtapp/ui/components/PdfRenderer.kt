@@ -225,7 +225,6 @@ fun PdfPageView(
     var bitmap by remember { mutableStateOf<Bitmap?>(null) }
     Box(
         modifier = modifier
-            .background(Color.Cyan)
             .pointerInput(isMainPage) {
                 Log.v(
                     "MainActivity",

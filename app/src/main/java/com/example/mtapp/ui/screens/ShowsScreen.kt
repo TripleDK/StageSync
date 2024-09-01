@@ -17,7 +17,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import com.example.mtapp.Models.Show
 import com.example.mtapp.R
-import com.example.mtapp.data.DataSource
+
 import com.example.mtapp.ui.theme.MTAPPTheme
 
 @Composable
@@ -67,7 +67,10 @@ fun ShowListItem(
 fun ShowListItemPreview() {
     MTAPPTheme {
         ShowListItem(
-            show = DataSource.shows[0],
+            show = Show(
+                name = R.string.wizard_of_oz,
+                scenes = emptyList()
+            ),
             onClick = {}
         )
     }
@@ -77,7 +80,12 @@ fun ShowListItemPreview() {
 @Composable
 fun ShowsListContentPreview() {
     ShowsListContent(
-        shows = DataSource.shows,
+        shows = listOf(
+            Show(
+                name = R.string.wizard_of_oz,
+                scenes = emptyList()
+            )
+        ),
         onShowClicked = {}
     )
 }

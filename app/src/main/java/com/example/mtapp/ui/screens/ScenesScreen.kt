@@ -65,7 +65,7 @@ fun ScenesListContent(
         ) {
             Box(modifier = Modifier.weight(1f)) {
                 IconButton(
-                    onClick = { onBack },
+                    onClick =  onBack ,
                     enabled = !show.schedulePath.isNullOrEmpty(),
                     modifier = Modifier.align(Alignment.CenterStart)
                 ) {
