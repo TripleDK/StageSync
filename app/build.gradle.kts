@@ -85,6 +85,7 @@ dependencies {
     implementation("androidx.media3:media3-common:1.3.1")
     ksp("androidx.room:room-compiler:${rootProject.extra["room_version"]}")
     implementation("androidx.room:room-ktx:${rootProject.extra["room_version"]}")
+    implementation("com.google.code.gson:gson:2.10.1")
 
     implementation("androidx.datastore:datastore-preferences:1.0.0")
 

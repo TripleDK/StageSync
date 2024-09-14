@@ -1,5 +1,7 @@
 package com.example.mtapp.ui
 
+import ScenesListContent
+import ShowScenesListDestination
 import androidx.annotation.StringRes
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
@@ -8,30 +10,30 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.example.mtapp.R
-import com.example.mtapp.ui.screens.rehearsalscreen.RehearseScreen
-import com.example.mtapp.ui.screens.ScenesListContent
-import com.example.mtapp.ui.screens.ShowsListContent
+import com.example.mtapp.ui.screens.shows.ShowCreateScreen
+import com.example.mtapp.ui.screens.shows.ShowListViewModel
+import com.example.mtapp.ui.screens.shows.ShowsListContent
 import com.example.mtapp.ui.theme.MTAPPTheme
 
 enum class StageSyncScreen(@StringRes val title: Int) {
     Shows(title = R.string.app_name),
-    Scenes(title = R.string.scene_list),
+    AddShow(title = R.string.add_show),
     Rehearse(title = R.string.rehearsal)
 }
 
 
 @Composable
 fun StageSyncApp(
-    stageSyncViewModel: StageSyncViewModel = viewModel(factory = StageSyncViewModel.Factory),
     navController: NavHostController = rememberNavController()
 ) {
     MTAPPTheme {
         Surface {
-            val uiState by stageSyncViewModel.uiState.collectAsState()
 
             NavHost(
                 navController = navController,
@@ -40,33 +42,46 @@ fun StageSyncApp(
             ) {
                 composable(route = StageSyncScreen.Shows.name) {
                     ShowsListContent(
-                        stageSyncViewModel.shows,
+                        onAddShowClicked = {
+                            navController.navigate(StageSyncScreen.AddShow.name)
+                        },
+                        //TODO: This
+//                        onEditShowClicked = {
+//                            navController.navigate(StageSyncScreen.EditShow.name)
+//                        },
                         onShowClicked = {
-                            stageSyncViewModel.setSelectedShow(it)
-                            navController.navigate(StageSyncScreen.Scenes.name)
+                            navController.navigate("${ShowScenesListDestination.route}/${it}")
                         }
                     )
                 }
-                composable(route = StageSyncScreen.Scenes.name) {
-                    uiState.currentShow?.let { curShow ->
-                        ScenesListContent(
-                            curShow,
-                            onBack = {
-                                stageSyncViewModel.setSelectedShow(null)
-                                navController.navigate(StageSyncScreen.Shows.name)
-                            },
-                            onSceneClicked = {
-                                stageSyncViewModel.setSelectedScene(it)
-                                navController.navigate(StageSyncScreen.Rehearse.name)
-                            }
-                        )
-                    }
+                composable(route = StageSyncScreen.AddShow.name) {
+                    ShowCreateScreen(
+                        navigateBack = {
+                            navController.navigate(StageSyncScreen.Shows.name)
+                        }
+                    )
                 }
-                composable(route = StageSyncScreen.Rehearse.name) {
-                    uiState.currentScene?.let { curScene ->
-                        RehearseScreen(stageSyncViewModel)
-                    }
+                composable(
+                    route = ShowScenesListDestination.routeWithArgs,
+                    arguments = listOf(navArgument(ShowScenesListDestination.showIdArg) {
+                        type = NavType.IntType
+                    })
+                )
+                {
+                    ScenesListContent(
+                        onBack = {
+                            navController.navigate(StageSyncScreen.Shows.name)
+                        },
+                        onSceneClicked = {
+                            navController.navigate(StageSyncScreen.Rehearse.name)
+                        }
+                    )
                 }
+//                composable(route = StageSyncScreen.Rehearse.name) {
+//                    uiState.currentScene?.let { curScene ->
+//                        RehearseScreen(stageSyncViewModel)
+//                    }
+//                }
             }
         }
     }

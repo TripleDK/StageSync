@@ -1,4 +1,4 @@
-package com.example.mtapp
+package com.example.mtapp.exercises
 
 import android.app.Application
 import com.example.mtapp.data.AppContainer

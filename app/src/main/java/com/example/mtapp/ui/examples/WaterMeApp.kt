@@ -39,7 +39,7 @@ import com.example.mtapp.ONE_DAY
 import com.example.mtapp.R
 import com.example.mtapp.SEVEN_DAYS
 import com.example.mtapp.THIRTY_DAYS
-import com.example.mtapp.data.Reminder
+import com.example.mtapp.data.local.exercises.Reminder
 import com.example.mtapp.data.local.exercises.WaterMeDataSource
 import com.example.mtapp.ui.theme.MTAPPTheme
 import java.util.concurrent.TimeUnit

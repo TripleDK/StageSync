@@ -1,4 +1,4 @@
-package com.example.mtapp.data
+package com.example.mtapp.data.local.exercises
 
 import androidx.annotation.StringRes
 import java.util.concurrent.TimeUnit

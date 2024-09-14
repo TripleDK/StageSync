@@ -424,6 +424,9 @@
 
     <string name="scene_list">Scenes</string>
     <string name="rehearsal">Rehearsal</string>
+    <string name="add_show">Add show</string>
+    <string name="show_name_req">Show Name*</string>
+
 
     <string name="footloose">Footloose</string>
     <string name="addams_family">Addam\'s Family</string>

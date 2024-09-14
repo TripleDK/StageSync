@@ -5,9 +5,9 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.ViewModelProvider.AndroidViewModelFactory.Companion.APPLICATION_KEY
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
-import com.example.mtapp.WaterMeApplication
+import com.example.mtapp.exercises.WaterMeApplication
+import com.example.mtapp.data.local.exercises.Reminder
 import com.example.mtapp.data.local.exercises.WaterRepository
-import com.example.mtapp.data.Reminder
 
 class WaterViewModel(private val waterRepository: WaterRepository) : ViewModel() {
 

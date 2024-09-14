@@ -6,6 +6,7 @@ import com.example.mtapp.data.DefaultAppContainer
 
 class StageSyncApplication : Application() {
     lateinit var container: AppContainer
+    
     override fun onCreate() {
         super.onCreate()
         container = DefaultAppContainer(this)

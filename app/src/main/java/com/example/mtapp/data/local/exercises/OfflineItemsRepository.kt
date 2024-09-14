@@ -1,8 +1,5 @@
-package com.example.mtapp.data
+package com.example.mtapp.data.local.exercises
 
-import com.example.mtapp.data.local.exercises.Item
-import com.example.mtapp.data.local.exercises.ItemDao
-import com.example.mtapp.data.local.exercises.ItemsRepository
 import kotlinx.coroutines.flow.Flow
 
 class OfflineItemsRepository(private val itemDao: ItemDao) : ItemsRepository {
@@ -16,3 +13,4 @@ class OfflineItemsRepository(private val itemDao: ItemDao) : ItemsRepository {
 
     override suspend fun updateItem(item: Item) = itemDao.update(item)
 }
+
